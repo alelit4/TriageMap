@@ -1,0 +1,440 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-styles/color.html">
+<link rel="import" href="../bower_components/paper-styles/typography.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-document.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="my-view1">
+    <template>
+        <style include="shared-styles">
+            :host {
+                display: block;
+
+                padding: 10px;
+            }
+
+            p {
+                margin-top: 100px;
+            }
+
+            .container {
+              margin-left: 20%;
+              margin-top: 10px;
+            }
+
+            #container{
+              margin-top: 100px;
+            }
+
+        </style>
+
+
+        <div id="container" class="container" style="height: 400px;min-width: 310px;max-width: 800px;"></div>
+        <div id="container2" class="container" style="height: 400px;min-width: 310px;max-width: 800px;"></div>
+        <div id="container3" class="container" style="height: 400px;min-width: 310px;max-width: 800px;"></div>
+        <div id="container4" class="container" style="height: 400px;min-width: 310px;max-width: 800px;"></div>
+
+        
+    </template>
+
+    <script>
+        class MyView1 extends Polymer.Element {
+
+            static get is() {
+                return 'my-view1';
+            }
+
+            static get properties() {
+                return {
+                    data: {
+                        type: String,
+                        notify: true,
+                        observer: 'dataChanged'
+                    },
+                    loaded: {
+                        type: Boolean,
+                        reflectToAttribute: true
+                    },
+                    id: {
+                        type: String,
+                        notify: true
+                    }
+
+                }
+            }
+            
+            
+        
+            ready() {
+                super.ready();
+                
+                var data = {
+                    n : 500,
+                    rep : 100,
+                    diferenciaSize : [],
+                    diferenciaCosto : [],
+                    diferenciaSizeOp : [],
+                    diferenciaCostoOp : [],
+                };
+                this._initData(data);
+                var mejoraCosto = [];
+                for (var i = 0; i < data.diferenciaCosto.length; i++){
+                    mejoraCosto.push(data.diferenciaCosto[i]-data.diferenciaCostoOp[i]);
+                    if (data.diferenciaCosto[i] < data.diferenciaCostoOp[i])
+                        console.log("--> hay algo raro en i =" + i + ", diferenciaCostoOp = " + data.diferenciaCosto[i] + ", diferenciaCostoOp = " + data.diferenciaSizeOp[i]);
+                }
+                    
+                var mejoraSize = [];
+                for (var i = 0; i < data.diferenciaSize.length; i++){
+                    mejoraSize.push(data.diferenciaSize[i]-data.diferenciaSizeOp[i]);
+                    
+                }
+                this._createCharts(data.diferenciaCosto, data.diferenciaCostoOp, mejoraCosto, data.diferenciaSize, data.diferenciaSizeOp, mejoraSize);
+      
+            }
+
+            _initData(data){
+                  // This example adds an animated symbol to a polyline.
+                var maxLat = 28.481200;
+                var minLat = 28.481500;
+                var maxLng = -16.320000;
+                var minLng = -16.320600;
+
+                let hosp1 = {lat: 28.481200, lng: -16.320000};
+                let hosp2 = {lat: 28.481500, lng: -16.320600};
+
+                var coordinatesRed = [];
+                var coordinatesYellow = [];
+                var coordinatesGreen = [];
+                var red1 = [];
+                var red2 = [];
+                var red1Op = [];
+                var red2Op = [];
+
+                var hosp1RedLines = [];
+                var hosp2RedLines = [];
+                var hosp1RedLinesOp = [];
+                var hosp2RedLinesOp = [];
+
+                for (var p = 0; p < data.rep; p++ ){
+                    coordinatesRed = [];
+                    this._createPoints(coordinatesRed, 500);
+                    this._splitPoints(coordinatesRed, red1, red2, hosp1, hosp2);
+
+                    let costRed1 = this._getCost(hosp1, red1);
+                    let costRed2 = this._getCost(hosp2, red2);
+                    var diferenciaCosto = Math.abs(costRed1-costRed2);
+                    var diferenciaSize = Math.abs(red1.length-red2.length);
+                    
+                    data.diferenciaSize.push(diferenciaSize);
+                    data.diferenciaCosto.push(diferenciaCosto);
+                    red1Op = red1;
+                    red2Op = red2;
+                    let newPoint;
+                    while(diferenciaSize != 0){
+                        let aux1 = red1Op;
+                        let aux2 = red2Op;
+                        if (aux1.length < aux2.length){
+                            newPoint =  this._equilibrate(aux2, aux1, hosp1);
+                        }else{
+                            newPoint =  this._equilibrate(aux1, aux2, hosp2);
+                        }
+                        console.log(" ----------------------- ");
+                        costRed1 = this._getCost(hosp1, aux1);
+                        costRed2 = this._getCost(hosp2, aux2);
+                        diferenciaSize = Math.abs(aux1.length-aux2.length);
+                        if (diferenciaCosto > ( Math.abs(costRed1-costRed2)) ) {
+                            diferenciaCosto = Math.abs(costRed1-costRed2);
+                            red1Op = aux1;
+                            red2Op = aux2;
+                        }else {
+                            break;
+                        }
+                    }
+                    data.diferenciaCostoOp.push(diferenciaCosto);
+                    data.diferenciaSizeOp.push(diferenciaSize);
+                    console.log(">> ");
+                    console.log(">> p = " + p);
+                
+                }
+            }
+
+            _createCharts(diferenciaCosto, diferenciaCostoOp, mejoraCosto, diferenciaSize, diferenciaSizeOp, mejoraSize){
+                var chart1 = Highcharts.chart(this.$.container, {
+                    chart: {
+                        type: 'area'
+                    },
+                    title: {
+                        text: 'Size diference'
+                    },
+                    xAxis: {
+                        tickmarkPlacement: 'on',
+                        title: {
+                            enabled: false
+                        }
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'victims'
+                        },
+                        labels: {
+                            formatter: function () {
+                                return this.value;
+                            }
+                        }
+                    },
+                    tooltip: {
+                        split: true,
+                        valueSuffix: ' número de personas'
+                    },
+                    plotOptions: {
+                        area: {
+                            stacking: 'normal',
+                            lineColor: '#666666',
+                            lineWidth: 1,
+                            marker: {
+                                lineWidth: 1,
+                                lineColor: '#666666'
+                            }
+                        }
+                    },
+                    series: [
+                        {
+                            name: 'diferenciaSize',
+                            data: diferenciaSize 
+                            }, {
+                            name: 'diferenciaSizeOp',
+                            data: diferenciaSizeOp
+                            }]
+                    });
+
+                var chart2 = Highcharts.chart(this.$.container2, {
+                    chart: {
+                        type: 'area'
+                    },
+                    title: {
+                        text: 'Costo diference'
+                    },
+                    xAxis: {
+                        tickmarkPlacement: 'on',
+                        title: {
+                            enabled: false
+                        }
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'victims'
+                        },
+                        labels: {
+                            formatter: function () {
+                                return this.value ;
+                            }
+                        }
+                    },
+                    tooltip: {
+                        split: true,
+                        valueSuffix: ' metros'
+                    },
+                    plotOptions: {
+                        area: {
+                            stacking: 'normal',
+                            lineColor: '#666666',
+                            lineWidth: 1,
+                            marker: {
+                                lineWidth: 1,
+                                lineColor: '#666666'
+                            }
+                        }
+                    },
+                    series: [{
+                            name: 'diferenciaCosto',
+                            data: diferenciaCosto
+                        }, {
+                            name: 'diferenciaCostoOp',
+                            data: diferenciaCostoOp
+                        }]
+                    });
+
+
+                var chart3 = Highcharts.chart(this.$.container3, {
+                    chart: {
+                        type: 'area'
+                    },
+                    title: {
+                        text: 'Mejora de costo'
+                    },
+                    xAxis: {
+                        tickmarkPlacement: 'on',
+                        title: {
+                            enabled: false
+                        }
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'victims'
+                        },
+                        labels: {
+                            formatter: function () {
+                                return this.value ;
+                            }
+                        }
+                    },
+                    tooltip: {
+                        split: true,
+                        valueSuffix: ' metros'
+                    },
+                    plotOptions: {
+                        area: {
+                            stacking: 'normal',
+                            lineColor: '#666666',
+                            lineWidth: 1,
+                            marker: {
+                                lineWidth: 1,
+                                lineColor: '#666666'
+                            }
+                        }
+                    },
+                    series: [{
+                            name: 'Mejora de Costo',
+                            data: mejoraCosto
+                        }]
+                    });
+                
+                var chart4 = Highcharts.chart(this.$.container4, {
+                    chart: {
+                        type: 'area'
+                    },
+                    title: {
+                        text: 'Mejora de size'
+                    },
+                    xAxis: {
+                        tickmarkPlacement: 'on',
+                        title: {
+                            enabled: false
+                        }
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'victims'
+                        },
+                        labels: {
+                            formatter: function () {
+                                return this.value ;
+                            }
+                        }
+                    },
+                    tooltip: {
+                        split: true,
+                        valueSuffix: ' metros'
+                    },
+                    plotOptions: {
+                        area: {
+                            stacking: 'normal',
+                            lineColor: '#666666',
+                            lineWidth: 1,
+                            marker: {
+                                lineWidth: 1,
+                                lineColor: '#666666'
+                            }
+                        }
+                    },
+                    series: [{
+                            name: 'Mejora de Size',
+                            data: mejoraSize
+                    }]
+                });
+
+            } 
+
+            _createPoints(coordinates, limit) {
+                var maxLat = 28.481200;
+                var minLat = 28.481500;
+                var maxLng = -16.320000;
+                var minLng = -16.320600;
+                for (var i = 0; i < limit; i++) {
+                    coordinates.push({ lat: Math.random() * (maxLat - minLat) + minLat, lng: Math.random() * (maxLng - minLng) + minLng });
+                }
+            }  
+
+            _splitPoints(coordinates, group1, group2, base1, base2){
+                for (var i = 0; i < coordinates.length; i++) {
+                    if ( this._getDistance(base1, coordinates[i]) < this._getDistance(base2, coordinates[i]) ) {
+                        group1.push( coordinates[i] );
+                    } else{
+                        group2.push( coordinates[i] );
+                    }
+                }
+            }
+
+            _equilibrate(group1, group2, base, map){
+                let candidato = 0;
+                for (var i = 0; i < group1.length; i++) {
+                    if ( this._getDistance(group1[candidato], base) > this._getDistance(group1[i], base)) {
+                    candidato = i;  
+                    }
+                }
+                let point = group1[candidato];
+                group2.push(group1[candidato]);
+                group1.splice(candidato, 1);
+                return point;
+                
+            }
+            _getCost(base, group) {
+                let cost = 0;
+                for (var i = 0; i < group.length; i++) {
+                    cost += this._getDistance(base, group[i]);
+                }
+            //   console.log("final cost = "+ cost);
+                return cost;
+            }
+
+            _rad(x) {
+                return x * Math.PI / 180;
+            }
+
+            _getDistance(p1, p2) {
+                var R = 6378137; // Earth’s mean radius in meter
+                var dLat = this._rad(p2.lat - p1.lat);
+                var dLong = this._rad(p2.lng - p1.lng);
+                var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(this._rad(p1.lat)) * Math.cos(this._rad(p2.lat)) *
+                Math.sin(dLong / 2) * Math.sin(dLong / 2);
+                var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                var d = R * c;
+                return d; // returns the distance in meter
+            }
+
+          
+
+
+        }
+
+
+        window
+                .customElements
+                .define(MyView1
+
+                                .is
+                        ,
+                        MyView1
+                )
+        ;
+
+
+    </script>
+
+
+</dom-module>

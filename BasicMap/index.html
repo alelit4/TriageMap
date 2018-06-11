@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+  <meta charset="utf-8">
+  <title>Animating Symbols</title>
+  <style>
+    /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+
+    #map {
+      height: 100%;
+    }
+    /* Optional: Makes the sample page fill the window. */
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+  <script>
+
+     var maxLat = 28.487200;
+        var minLat = 28.482896;
+        var maxLng = -16.327917;
+        var minLng = -16.3117884;
+
+    let hosp1 = {lat: 28.487200, lng: -16.327917};
+    let hosp2 = {lat: 28.482896, lng: -16.3117884};
+
+    var coordinatesRed = [];
+    var coordinatesYellow = [];
+    var coordinatesGreen = [];
+    var red1 = [];
+    var red2 = [];
+    var red1Op = [];
+    var red2Op = [];
+
+    var hosp1RedLines = [];
+    var hosp2RedLines = [];
+    var hosp1RedLinesOp = [];
+    var hosp2RedLinesOp = [];
+
+    var data = {
+      n : 50,
+      rep : 1,
+      diferenciaSize : [],
+      diferenciaCosto : [],
+      diferenciaSizeOp : [],
+      diferenciaCostoOp : [],
+      
+    };
+    
+    
+
+    function initMap() {
+      var map = new google.maps.Map(document.getElementById('map'), {
+        center: { lat: 28.481378, lng: -16.320300 },
+        zoom: 20,
+        mapTypeId: 'terrain'
+      });
+
+      // Define the symbol, using one of the predefined paths ('CIRCLE')
+      // supplied by the Google Maps JavaScript API.
+      var lineSymbol = {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 4,
+        strokeColor: '#393'
+      };
+
+      var createGraph = document.createElement('div');
+      var centerControl = new CenterControl(createGraph, map);
+      var createGraph2 = document.createElement('div');
+      var centerControl2 = new CenterControl2(createGraph2, map);
+
+      createGraph.index = 1;
+      createGraph2.index = 1;
+     
+      map.controls[google.maps.ControlPosition.TOP_CENTER].push(createGraph);
+      map.controls[google.maps.ControlPosition.TOP_CENTER].push(createGraph2);
+
+      for (var p = 0; p < data.rep; p++ ){
+        coordinatesRed = [];
+        createPoints(coordinatesRed, data.n);
+        createPoints(coordinatesYellow, data.n);
+        createPoints(coordinatesGreen, data.n);
+      
+      // createPoints(coordinatesGreen);
+       addMarkers(map, coordinatesRed, './redmini.png');
+       addMarkers(map, coordinatesYellow, './yellowmini.png');
+       addMarkers(map, coordinatesGreen, './greenmini.png');
+
+        // Create the polyline and add the symbol to it via the 'icons' property.
+        addBasePoint(map, hosp1, './hosp.png');
+        addBasePoint(map, hosp2, './hosp.png');
+
+       // createStar(map, coordinatesRed, '#FFA000', hosp1 );
+       //createStar(map, coordinatesYellow, '#FFA000', hosp1 );
+       //createStar(map, coordinatesGreen, '#00AF00', hosp1 );
+
+        splitPoints(coordinatesRed, red1, red2, hosp1, hosp2);
+
+        hosp1RedLines = createStar(map, red1, '#AF0000', hosp1 );
+        hosp2RedLines = createStar(map, red2, '#AF0000', hosp2 );
+
+        let costRed1 = getCost(hosp1, red1);
+        let costRed2 = getCost(hosp2, red2);
+        
+        var diferenciaCosto = Math.abs(costRed1-costRed2);
+        var diferenciaSize = Math.abs(red1.length-red2.length);
+        
+        data.diferenciaSize.push(diferenciaSize);
+        data.diferenciaCosto.push(diferenciaCosto);
+        red1Op = red1;
+        red2Op = red2;
+        let newPoint;
+        while(diferenciaSize != 0){
+          aux1 = red1Op;
+          aux2 = red2Op;
+          
+          if (aux1.length < aux2.length){
+            newPoint =  equilibrate(aux2, aux1, hosp1);
+          }else{
+            newPoint =  equilibrate(aux1, aux2, hosp2);
+          }
+          console.log(" ----------------------- ");
+          costRed1 = getCost(hosp1, aux1);
+          costRed2 = getCost(hosp2, aux2);
+          diferenciaSize = Math.abs(aux1.length-aux2.length);
+          if (diferenciaCosto > ( Math.abs(costRed1-costRed2)) ) {
+            diferenciaCosto = Math.abs(costRed1-costRed2);
+            console.log(">> MEJORA! ");
+            red1Op = aux1;
+            red2Op = aux2;
+            highlightPoint(map, newPoint);
+          }else {
+            console.log(">> NO HAY MEJORA! FUERA! ");
+  //          console.log(" ----------------------------------------------------- ");
+  //          console.log(" ----------------------- FINAL ----------------------- ");
+  //          console.log(" ----------------------------------------------------- ");
+  
+  //          console.log("diferenciaSize = " + diferenciaSize + ", diferenciaCosto = " + diferenciaCosto);
+          
+            break;
+          }
+        }
+        data.diferenciaCostoOp.push(diferenciaCosto);
+        data.diferenciaSizeOp.push(diferenciaSize);
+        console.log(">> ");
+        console.log(">> p = " + p);
+        
+      }        
+      
+      /*
+      coordinatesRed = [];
+      coordinatesYellow = [];
+      coordinatesGreen = [];
+    
+      createPoints(coordinatesRed, 20);
+      createPoints(coordinatesYellow, 30);
+      createPoints(coordinatesGreen, 40);
+     
+     // createPoints(coordinatesGreen);
+      addMarkers(map, coordinatesRed, './redmini.png');
+      addMarkers(map, coordinatesYellow, './yellowmini.png');
+      addMarkers(map, coordinatesGreen, './greenmini.png');
+
+      createStar(map, coordinatesRed, '#AF0000', hosp2 );
+      createStar(map, coordinatesYellow, '#FFA000', hosp2 );
+      createStar(map, coordinatesGreen, '#00AF00', hosp2 );
+*/
+     
+  /*var lineRed = new google.maps.Polyline({
+        path: coordinatesRed,
+        strokeColor: '#FF0000',
+        strokeOpacity: 1.0,
+        strokeWeight: 2,
+        icons: [{
+          icon: lineSymbol,
+          offset: '10%'
+        }],
+        map: map
+      });
+*/
+        /*   var lineGreen = new google.maps.Polyline({
+        path: coordinatesGreen,
+        strokeColor: '#0000FF',
+        strokeOpacity: 1.0,
+        strokeWeight: 2,
+        icons: [{
+          icon: lineSymbol,
+          offset: '10%'
+        }],
+        map: map
+      });*/
+
+
+      
+      // point distances from beginning in %
+      //animateCircle(lineRed);
+      //animateCircle(lineGreen);
+     
+      // animateCircle2();
+      //addMarkers(map, coordinatesRed);
+      console.log("the end is : " + JSON.stringify(data));
+    }
+
+    //  var sphericalLib = google.maps.geometry.spherical;
+    //  pointDistances = [];
+    //     var pointZero = coordinates[0];
+    //    var wholeDist = sphericalLib.computeDistanceBetween(
+    //     pointZero,
+    //    coordinates[coordinates.length - 1]);
+
+    // for (var i = 0; i < coordinates.length; i++) {
+    //   pointDistances[i] = 100 * sphericalLib.computeDistanceBetween(
+    //    coordinates[i], pointZero) / wholeDist;
+    // console.log('pointDistances[' + i + ']: ' + pointDistances[i]);
+    //}
+
+  function CenterControl2(controlDiv, map) {
+
+        // Set CSS for the control border.
+        var controlUI = document.createElement('div');
+        controlUI.style.backgroundColor = '#fff';
+        controlUI.style.border = '2px solid #fff';
+        controlUI.style.borderRadius = '3px';
+        controlUI.style.boxShadow = '0 2px 6px rgba(0,0,0,.3)';
+        controlUI.style.cursor = 'pointer';
+        controlUI.style.marginBottom = '22px';
+        controlUI.style.marginLeft = '22px';
+        controlUI.style.textAlign = 'center';
+        controlUI.title = 'Click to restart the map';
+        controlDiv.appendChild(controlUI);
+
+        // Set CSS for the control interior.
+        var controlText = document.createElement('div');
+        controlText.style.color = 'rgb(25,25,25)';
+        controlText.style.fontFamily = 'Roboto,Arial,sans-serif';
+        controlText.style.fontSize = '16px';
+        controlText.style.lineHeight = '38px';
+        controlText.style.paddingLeft = '5px';
+        controlText.style.paddingRight = '5px';
+        controlText.innerHTML = 'Óptimo';
+        controlUI.appendChild(controlText);
+
+        controlUI.addEventListener('click', function() {
+//          createStar(map, red2, '#00AA00', hosp2 );
+          if (hosp1RedLinesOp.length < 1) {
+            console.log("pintamos");
+            hosp1RedLinesOp = createStar(map, red1Op, '#A90A00', hosp1 );
+            hosp2RedLinesOp = createStar(map, red2Op, '#A90A00', hosp2 );
+          } else {
+            console.log("borramos");
+            deletePolylines(map, hosp1RedLinesOp);
+            deletePolylines(map, hosp2RedLinesOp);
+            hosp1RedLinesOp = [];
+            hosp2RedLinesOp = [];
+         }
+
+        });
+
+      }
+
+
+  function CenterControl(controlDiv, map) {
+
+        // Set CSS for the control border.
+        var controlUI = document.createElement('div');
+        controlUI.style.backgroundColor = '#fff';
+        controlUI.style.border = '2px solid #fff';
+        controlUI.style.borderRadius = '3px';
+        controlUI.style.boxShadow = '0 2px 6px rgba(0,0,0,.3)';
+        controlUI.style.cursor = 'pointer';
+        controlUI.style.marginBottom = '22px';
+        controlUI.style.textAlign = 'center';
+        controlUI.title = 'Click to restart the map';
+        controlDiv.appendChild(controlUI);
+
+        // Set CSS for the control interior.
+        var controlText = document.createElement('div');
+        controlText.style.color = 'rgb(25,25,25)';
+        controlText.style.fontFamily = 'Roboto,Arial,sans-serif';
+        controlText.style.fontSize = '16px';
+        controlText.style.lineHeight = '38px';
+        controlText.style.paddingLeft = '5px';
+        controlText.style.paddingRight = '5px';
+        controlText.innerHTML = 'Standar';
+        controlUI.appendChild(controlText);
+
+        controlUI.addEventListener('click', function() {
+           if (hosp1RedLines.length < 1) {
+            hosp1RedLines = createStar(map, red1, '#AF0000', hosp1 );
+            hosp2RedLines = createStar(map, red2, '#AF0000', hosp2 );
+          } else {
+            deletePolylines(map, hosp1RedLines);
+            deletePolylines(map, hosp2RedLines);
+            hosp1RedLines = [];
+            hosp2RedLines = [];
+         }
+         
+        });
+
+      }
+
+    function saveCsv (coordinates){
+      var A = [['xLat','yLng']];
+
+      for(var j = 0; j < coordinates.length; ++j){ 
+          A.push([coordinates[j].lat, coordinates[j].lng]);
+      }
+
+      var csvRows = [];
+
+      for(var i=0, l=A.length; i<l; ++i){
+          csvRows.push(A[i]);
+      }
+
+      var csvString = csvRows.join(";");
+      var a         = document.createElement('a');
+      a.href        = 'data:attachment/csv,' +  encodeURIComponent(csvString);
+      a.target      = '_blank';
+      a.download    = 'myFile.csv';
+
+      document.body.appendChild(a);
+      a.click();
+
+    }
+
+    function rad(x) {
+      return x * Math.PI / 180;
+    };
+
+    function getDistance(p1, p2) {
+      var R = 6378137; // Earth’s mean radius in meter
+      var dLat = rad(p2.lat - p1.lat);
+      var dLong = rad(p2.lng - p1.lng);
+      var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(rad(p1.lat)) * Math.cos(rad(p2.lat)) *
+      Math.sin(dLong / 2) * Math.sin(dLong / 2);
+      var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      var d = R * c;
+      return d; // returns the distance in meter
+    };
+
+  
+    // Use the DOM setInterval() function to change the offset of the symbol
+    // at fixed intervals.
+    function animateCircle(line) {
+      var count = 0;
+      window.setInterval(function () {
+        count = (count + 1) % 1000;
+        //count = (count + 1) % 1000;
+
+        var icons = line.get('icons');
+      //  console.log('line -> ' + icons);
+        icons[0].offset = (count / 200) + '%';
+        line.set('icons', icons);
+      }, 10);
+    }
+
+    function addBasePoint(map, point, color) {
+      marker = new google.maps.Marker({
+          map: map,
+          icon: {
+            url: color,
+            anchor: new google.maps.Point(10, 10)},
+          position: { lat: point.lat, lng: point.lng }
+        });
+    }
+
+    function addMarkers(map, coordinates, color) {
+      for (i = 0; i < coordinates.length; i++)
+        marker = new google.maps.Marker({
+          map: map,
+          icon: {
+            url: color,
+            anchor: new google.maps.Point(5, 5)},
+          position: { lat: coordinates[i].lat, lng: coordinates[i].lng }
+        });
+    }
+
+    function getCost(base, group) {
+      let cost = 0;
+      for (var i = 0; i < group.length; i++) {
+         cost += getDistance(base, group[i]);
+      }
+  //   console.log("final cost = "+ cost);
+      return cost;
+    }
+
+    function deletePolylines (map, polylines){
+      for (var i = 0; i < polylines.length; i++) {
+        polylines[i].setMap(null);
+      }
+    }
+
+    function createStar (map, coordinates, color, base){
+       let polylines = [];
+       for (var i = 0; i < coordinates.length; i++) {
+        polylines.push(new google.maps.Polyline({
+          path: [base, coordinates[i]],
+          strokeColor: color,
+          strokeOpacity: 1.0,
+          strokeWeight: 2,
+          map: map
+        }));
+      }
+      return polylines;
+    }
+
+    function animateCircle2() {
+      var count = 0;
+      var offset;
+      var sentiel = -1;
+
+      id = window.setInterval(function () {
+        count = (count + 1) % 200;
+        offset = count / 2;
+
+        for (var i = pointDistances.length - 1; i > sentiel; i--) {
+          if (offset > pointDistances[i]) {
+            console.log('create marker');
+            var marker = new google.maps.Marker({
+              icon: {
+                url: "https://maps.gstatic.com/intl/en_us/mapfiles/markers2/measle_blue.png",
+                size: new google.maps.Size(7, 7),
+                anchor: new google.maps.Point(4, 4)
+              },
+              position: line.getPath().getAt(i),
+              title: line.getPath().getAt(i).toUrlValue(6),
+              map: map
+            });
+
+            sentiel++;
+            break;
+          }
+        }
+
+        // we have only one icon
+        var icons = line.get('icons');
+        icons[0].offset = (offset) + '%';
+        line.set('icons', icons);
+
+        if (line.get('icons')[0].offset == "99.5%") {
+          icons[0].offset = '100%';
+          line.set('icons', icons);
+          window.clearInterval(id);
+        }
+
+      }, 20);
+    }
+
+    function createPoints(coordinates, limit) {
+         var maxLat = 28.487200;
+        var minLat = 28.482896;
+        var maxLng = -16.327917;
+        var minLng = -16.3117884;
+
+      for (var i = 0; i < limit; i++) {
+        coordinates.push({ lat: Math.random() * (maxLat - minLat) + minLat, lng: Math.random() * (maxLng - minLng) + minLng });
+      }
+    }
+
+    function splitPoints(coordinates, group1, group2, base1, base2){
+       for (var i = 0; i < coordinates.length; i++) {
+         if ( getDistance(base1, coordinates[i]) < getDistance(base2, coordinates[i]) ) {
+            group1.push( coordinates[i] );
+         } else{
+            group2.push( coordinates[i] );
+         }
+      }
+    }
+
+    function equilibrate(group1, group2, base, map){
+      let candidato = 0;
+      for (var i = 0; i < group1.length; i++) {
+        if ( getDistance(group1[candidato], base) > getDistance(group1[i], base)) {
+          candidato = i;  
+        }
+      }
+      point = group1[candidato];
+      group2.push(group1[candidato]);
+      group1.splice(candidato, 1);
+      return point;
+      
+    }
+
+    function highlightPoint(map, newPoint){
+    //  console.log("highlightPoint");
+      var marker = new google.maps.Marker({
+        icon: {
+          url: "./blackmini.png",
+          size: new google.maps.Size(7, 7),
+          anchor: new google.maps.Point(4, 4)
+        },
+          position: { lat: newPoint.lat, lng: newPoint.lng },
+          map: map
+        });
+    }
+
+  </script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?&libraries=geometry&callback=initMap">
+
+  </script>
+</body>
+
+</html>

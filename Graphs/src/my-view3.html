@@ -1,0 +1,596 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-styles/color.html">
+<link rel="import" href="../bower_components/paper-styles/typography.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-document.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="my-view3">
+  <template>
+    <style include="shared-styles">
+       :host {
+        display: block;
+
+        padding: 10px;
+      }
+
+      p {
+        margin-top: 100px;
+      }
+
+      .container {
+        margin-left: 20%;
+        margin-top: 10px;
+      }
+
+      #container {
+        margin-top: 100px;
+      }
+    </style>
+
+
+    <div id="container" class="container" style="height: 400px;min-width: 310px;max-width: 800px;"></div>
+    <div id="container2" class="container" style="height: 400px;min-width: 310px;max-width: 800px;"></div>
+    <div id="container3" class="container" style="height: 400px;min-width: 310px;max-width: 800px;"></div>
+    <div id="container4" class="container" style="height: 400px;min-width: 310px;max-width: 800px;"></div>
+
+    <div id="container5" class="container" style="height: 400px;min-width: 310px;max-width: 800px;"></div>
+    <div id="container6" class="container" style="height: 400px;min-width: 310px;max-width: 800px;"></div>
+    <div id="container7" class="container" style="height: 400px;min-width: 310px;max-width: 800px;"></div>
+    <div id="container8" class="container" style="height: 400px;min-width: 310px;max-width: 800px;"></div>
+
+    <div id="container9" class="container" style="height: 400px;min-width: 310px;max-width: 800px;"></div>
+    <div id="container10" class="container" style="height: 400px;min-width: 310px;max-width: 800px;"></div>
+    <div id="container11" class="container" style="height: 400px;min-width: 310px;max-width: 800px;"></div>
+    <div id="container12" class="container" style="height: 400px;min-width: 310px;max-width: 800px;"></div>
+
+    <div id="containersize" class="container" style="height: 400px;min-width: 310px;max-width: 800px;"></div>
+    <div id="containercosto" class="container" style="height: 400px;min-width: 310px;max-width: 800px;"></div>
+
+    <!--<paper-card heading="Emmental" image="http://placehold.it/350x150/FFC107/000000" alt="Emmental">
+            <div class="card-content">
+                Emmentaler or Emmental is a yellow, medium-hard cheese that originated in the area around Emmental, Switzerland. It is one of the cheeses of Switzerland, and is sometimes known as Swiss cheese.
+            </div>
+            <div class="card-actions">
+                <paper-button>Share</paper-button>
+                <paper-button>Explore!</paper-button>
+            </div>
+        </paper-card>-->
+  </template>
+
+  <script>
+    class MyView3 extends Polymer.Element {
+
+      static get is() {
+        return 'my-view3';
+      }
+
+      static get properties() {
+        return {
+          data: {
+            type: String,
+            notify: true,
+            observer: 'dataChanged'
+          },
+          loaded: {
+            type: Boolean,
+            reflectToAttribute: true
+          },
+          id: {
+            type: String,
+            notify: true
+          }
+
+        }
+      }
+
+
+
+      ready() {
+        super.ready();
+
+        var data = {
+          n: 100,
+          rep: 100,
+          diferenciaSize: [],
+          diferenciaCosto: [],
+          diferenciaSizeOp: [],
+          diferenciaCostoOp: [],
+        };
+
+        var data2 = {
+          n: 1000,
+          rep: 100,
+          diferenciaSize: [],
+          diferenciaCosto: [],
+          diferenciaSizeOp: [],
+          diferenciaCostoOp: [],
+        };
+
+        var data3 = {
+          n: 10000,
+          rep: 100,
+          diferenciaSize: [],
+          diferenciaCosto: [],
+          diferenciaSizeOp: [],
+          diferenciaCostoOp: [],
+        };
+
+         var data4 = {
+          n: 100000,
+          rep: 100,
+          diferenciaSize: [],
+          diferenciaCosto: [],
+          diferenciaSizeOp: [],
+          diferenciaCostoOp: [],
+        };
+
+      var data5 = {
+          n: 1000000,
+          rep: 100,
+          diferenciaSize: [],
+          diferenciaCosto: [],
+          diferenciaSizeOp: [],
+          diferenciaCostoOp: [],
+        };
+        var meanSize = [];
+        var meanCosto = [];
+        
+        this._initData(data);
+
+        var mejoraCosto1 = this._getDataCosto(data);
+        var mejoraSize1 = this._getDataSize(data);
+        this._createCharts(this.$.container, this.$.container2, this.$.container3, this.$.container4, data.diferenciaCosto, data.diferenciaCostoOp, mejoraCosto1, data.diferenciaSize, data.diferenciaSizeOp, mejoraSize1);
+        meanSize.push(this._getMean(mejoraSize1));
+        meanCosto.push(this._getMean(mejoraCosto1));
+        
+        //---------
+        this._initData(data2);
+        var mejoraCosto2 = this._getDataCosto(data2);
+        var mejoraSize2 = this._getDataSize(data2);
+        this._createCharts(this.$.container5, this.$.container6, this.$.container7, this.$.container8, data2.diferenciaCosto, data2.diferenciaCostoOp, mejoraCosto2, data2.diferenciaSize, data2.diferenciaSizeOp, mejoraSize2);
+        meanSize.push(this._getMean(mejoraSize2));
+        meanCosto.push(this._getMean(mejoraCosto2));
+
+        // ----------        
+        this._initData(data3);
+        var mejoraCosto3 = this._getDataCosto(data3);
+        var mejoraSize3 = this._getDataSize(data3);
+        this._createCharts(this.$.container9, this.$.container10, this.$.container11, this.$.container12, data3.diferenciaCosto, data3.diferenciaCostoOp, mejoraCosto3, data3.diferenciaSize, data3.diferenciaSizeOp, mejoraSize3);
+        meanSize.push(this._getMean(mejoraSize3));
+        meanCosto.push(this._getMean(mejoraCosto3));
+
+        // ----------        
+        this._initData(data4);
+        var mejoraCosto4 = this._getDataCosto(data4);
+        var mejoraSize4 = this._getDataSize(data4);
+        meanSize.push(this._getMean(mejoraSize4));
+        meanCosto.push(this._getMean(mejoraCosto4));
+
+        // ----------        
+        this._initData(data5);
+        var mejoraCosto5 = this._getDataCosto(data5);
+        var mejoraSize5 = this._getDataSize(data5);
+        this._createCharts(this.$.container9, this.$.container10, this.$.container11, this.$.container12, data3.diferenciaCosto, data3.diferenciaCostoOp, mejoraCosto3, data3.diferenciaSize, data3.diferenciaSizeOp, mejoraSize3);
+        meanSize.push(this._getMean(mejoraSize5));
+        meanCosto.push(this._getMean(mejoraCosto5));
+
+        this._createChartsMeans(this.$.containersize, meanSize, "Size");
+        this._createChartsMeans(this.$.containercosto, meanCosto, "Costo");
+          
+        
+        
+       
+    
+      }
+
+        _getDataCosto (data){
+            var result = []
+            for (var i = 0; i < data.diferenciaCosto.length; i++) 
+              result.push(data.diferenciaCosto[i] - data.diferenciaCostoOp[i]);
+            return result;
+        }
+
+      _getDataSize (data){
+            var result = []
+            for (var i = 0; i < data.diferenciaSize.length; i++) 
+              result.push(data.diferenciaSize[i] - data.diferenciaSizeOp[i]);
+            return result;
+        }
+
+        _getMean(values){
+          let sum = values.reduce((previous, current) => current += previous);
+          let avg = sum / values.length;
+          return avg;
+        }
+      _initData(data) {
+        // This example adds an animated symbol to a polyline.
+        var maxLat = 28.487200;
+        var minLat = 28.482896;
+        var maxLng = -16.327917;
+        var minLng = -16.3117884;
+
+        let hosp1 = { lat: 28.487200, lng: -16.327917 };
+        let hosp2 = { lat: 28.482896, lng: -16.3117884 };
+
+        var coordinatesRed = [];
+        var coordinatesYellow = [];
+        var coordinatesGreen = [];
+        var red1 = [];
+        var red2 = [];
+        var red1Op = [];
+        var red2Op = [];
+
+        var hosp1RedLines = [];
+        var hosp2RedLines = [];
+        var hosp1RedLinesOp = [];
+        var hosp2RedLinesOp = [];
+
+        for (var p = 0; p < data.rep; p++) {
+          coordinatesRed = [];
+          this._createPoints(coordinatesRed, 500);
+          this._splitPoints(coordinatesRed, red1, red2, hosp1, hosp2);
+
+          let costRed1 = this._getCost(hosp1, red1);
+          let costRed2 = this._getCost(hosp2, red2);
+          var diferenciaCosto = Math.abs(costRed1 - costRed2);
+          var diferenciaSize = Math.abs(red1.length - red2.length);
+
+          data.diferenciaSize.push(diferenciaSize);
+          data.diferenciaCosto.push(diferenciaCosto);
+          red1Op = red1;
+          red2Op = red2;
+          let newPoint;
+          while (diferenciaSize != 0) {
+            let aux1 = red1Op;
+            let aux2 = red2Op;
+            if (aux1.length < aux2.length) {
+              newPoint = this._equilibrate(aux2, aux1, hosp1);
+            } else {
+              newPoint = this._equilibrate(aux1, aux2, hosp2);
+            }
+            console.log(" ----------------------- ");
+            costRed1 = this._getCost(hosp1, aux1);
+            costRed2 = this._getCost(hosp2, aux2);
+            diferenciaSize = Math.abs(aux1.length - aux2.length);
+            if (diferenciaCosto > (Math.abs(costRed1 - costRed2))) {
+              diferenciaCosto = Math.abs(costRed1 - costRed2);
+              red1Op = aux1;
+              red2Op = aux2;
+            } else {
+              break;
+            }
+          }
+          data.diferenciaCostoOp.push(diferenciaCosto);
+          data.diferenciaSizeOp.push(diferenciaSize);
+        
+        }
+      }
+
+      _createChartsMeans(container, media, title) {
+
+        Highcharts.chart(container, {
+          chart: {
+            type: 'area'
+          },
+          title: {
+            text: 'Monthly Average Rainfall'
+          },
+          subtitle: {
+            text: 'Source: WorldClimate.com'
+          },
+          xAxis: {
+            categories: [
+              '10',
+              '100',
+              '1000', 
+              '10000',
+              '100000'
+              
+            ],
+            crosshair: true
+          },
+          yAxis: {
+            min: 0,
+            title: {
+              text: 'Rainfall (mm)'
+            }
+          },
+          tooltip: {
+            headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+            pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+            '<td style="padding:0"><b>{point.y:.1f} mm</b></td></tr>',
+            footerFormat: '</table>',
+            shared: true,
+            useHTML: true
+          },
+          plotOptions: {
+            column: {
+              pointPadding: 0.2,
+              borderWidth: 0
+            }
+          },
+          series: [{
+            name: 'Mejora de' + title,
+            data: media
+
+          }]
+        });
+      }
+
+      _createCharts(container1, container2, container3, container4, diferenciaCosto, diferenciaCostoOp, mejoraCosto, diferenciaSize, diferenciaSizeOp, mejoraSize) {
+        var chart1 = Highcharts.chart(container1, {
+          chart: {
+            type: 'area'
+          },
+          title: {
+            text: 'Size diference'
+          },
+          xAxis: {
+            tickmarkPlacement: 'on',
+            title: {
+              enabled: false
+            }
+          },
+          yAxis: {
+            title: {
+              text: 'victims'
+            },
+            labels: {
+              formatter: function () {
+                return this.value;
+              }
+            }
+          },
+          tooltip: {
+            split: true,
+            valueSuffix: ' número de personas'
+          },
+          plotOptions: {
+            area: {
+              stacking: 'normal',
+              lineColor: '#666666',
+              lineWidth: 1,
+              marker: {
+                lineWidth: 1,
+                lineColor: '#666666'
+              }
+            }
+          },
+          series: [
+            {
+              name: 'diferenciaSize',
+              data: diferenciaSize
+            }, {
+              name: 'diferenciaSizeOp',
+              data: diferenciaSizeOp
+            }]
+        });
+
+        var chart2 = Highcharts.chart(container2, {
+          chart: {
+            type: 'area'
+          },
+          title: {
+            text: 'Costo diference'
+          },
+          xAxis: {
+            tickmarkPlacement: 'on',
+            title: {
+              enabled: false
+            }
+          },
+          yAxis: {
+            title: {
+              text: 'victims'
+            },
+            labels: {
+              formatter: function () {
+                return this.value;
+              }
+            }
+          },
+          tooltip: {
+            split: true,
+            valueSuffix: ' metros'
+          },
+          plotOptions: {
+            area: {
+              stacking: 'normal',
+              lineColor: '#666666',
+              lineWidth: 1,
+              marker: {
+                lineWidth: 1,
+                lineColor: '#666666'
+              }
+            }
+          },
+          series: [{
+            name: 'diferenciaCosto',
+            data: diferenciaCosto
+          }, {
+            name: 'diferenciaCostoOp',
+            data: diferenciaCostoOp
+          }]
+        });
+
+
+        var chart3 = Highcharts.chart(container3, {
+          chart: {
+            type: 'area'
+          },
+          title: {
+            text: 'Mejora de costo'
+          },
+          xAxis: {
+            tickmarkPlacement: 'on',
+            title: {
+              enabled: false
+            }
+          },
+          yAxis: {
+            title: {
+              text: 'victims'
+            },
+            labels: {
+              formatter: function () {
+                return this.value;
+              }
+            }
+          },
+          tooltip: {
+            split: true,
+            valueSuffix: ' metros'
+          },
+          plotOptions: {
+            area: {
+              stacking: 'normal',
+              lineColor: '#666666',
+              lineWidth: 1,
+              marker: {
+                lineWidth: 1,
+                lineColor: '#666666'
+              }
+            }
+          },
+          series: [{
+            name: 'Mejora de Costo',
+            data: mejoraCosto
+          }]
+        });
+
+        var chart4 = Highcharts.chart(container4, {
+          chart: {
+            type: 'area'
+          },
+          title: {
+            text: 'Mejora de size'
+          },
+          xAxis: {
+            tickmarkPlacement: 'on',
+            title: {
+              enabled: false
+            }
+          },
+          yAxis: {
+            title: {
+              text: 'victims'
+            },
+            labels: {
+              formatter: function () {
+                return this.value;
+              }
+            }
+          },
+          tooltip: {
+            split: true,
+            valueSuffix: ' metros'
+          },
+          plotOptions: {
+            area: {
+              stacking: 'normal',
+              lineColor: '#666666',
+              lineWidth: 1,
+              marker: {
+                lineWidth: 1,
+                lineColor: '#666666'
+              }
+            }
+          },
+          series: [{
+            name: 'Mejora de Size',
+            data: mejoraSize
+          }]
+        });
+
+      }
+
+      _createPoints(coordinates, limit) {
+        var maxLat = 28.487200;
+        var minLat = 28.482896;
+        var maxLng = -16.327917;
+        var minLng = -16.3117884;
+        for (var i = 0; i < limit; i++) {
+          coordinates.push({ lat: Math.random() * (maxLat - minLat) + minLat, lng: Math.random() * (maxLng - minLng) + minLng });
+        }
+      }
+
+      _splitPoints(coordinates, group1, group2, base1, base2) {
+        for (var i = 0; i < coordinates.length; i++) {
+          if (this._getDistance(base1, coordinates[i]) < this._getDistance(base2, coordinates[i])) {
+            group1.push(coordinates[i]);
+          } else {
+            group2.push(coordinates[i]);
+          }
+        }
+      }
+
+      _equilibrate(group1, group2, base, map) {
+        let candidato = 0;
+        for (var i = 0; i < group1.length; i++) {
+          if (this._getDistance(group1[candidato], base) > this._getDistance(group1[i], base)) {
+            candidato = i;
+          }
+        }
+        let point = group1[candidato];
+        group2.push(group1[candidato]);
+        group1.splice(candidato, 1);
+        return point;
+
+      }
+      _getCost(base, group) {
+        let cost = 0;
+        for (var i = 0; i < group.length; i++) {
+          cost += this._getDistance(base, group[i]);
+        }
+        //   console.log("final cost = "+ cost);
+        return cost;
+      }
+
+      _rad(x) {
+        return x * Math.PI / 180;
+      }
+
+      _getDistance(p1, p2) {
+        var R = 6378137; // Earth’s mean radius in meter
+        var dLat = this._rad(p2.lat - p1.lat);
+        var dLong = this._rad(p2.lng - p1.lng);
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(this._rad(p1.lat)) * Math.cos(this._rad(p2.lat)) *
+          Math.sin(dLong / 2) * Math.sin(dLong / 2);
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        var d = R * c;
+        return d; // returns the distance in meter
+      }
+
+
+
+
+    }
+
+
+    window
+      .customElements
+      .define(MyView3
+
+        .is
+      ,
+      MyView3
+      )
+      ;
+  </script>
+
+
+</dom-module>

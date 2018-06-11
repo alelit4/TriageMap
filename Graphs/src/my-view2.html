@@ -1,0 +1,77 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/google-map/google-map.html">
+
+<link rel="import" href="shared-styles.html">
+<!-- <script async defer src="https://maps.googleapis.com/maps/api/js?&libraries=geometry"></script>-->
+
+
+<dom-module id="my-view2">
+  <template  is="dom-bind">
+    <style include="shared-styles">
+      :host {
+        display: block;
+
+        padding: 10px;
+      }
+
+      .container {
+          grid-template-rows: 1fr 5fr 1fr;
+          grid-template-columns: 1fr 5fr 1fr;
+
+      }
+
+      #map {
+        margin-top: 100px;
+        height: 90% !important;
+        width: 100% !important;
+        z-index: auto;
+
+      }
+      
+      .card {
+         margin-top: 100px;
+      }
+
+    </style>
+    <div class="container">
+        <google-map map={{map}}  id="map" api-key="AIzaSyD3E1D9b-Z7ekrT3tbhl_dy8DCXuIuDDRc" width="600px" height="700px" latitude="28.481378" longitude="-16.320300"></google-map>
+
+    </div>
+    
+
+  </template>
+
+  <script>
+    class MyView2 extends Polymer.Element {
+      static get is() { return 'my-view2'; } 
+
+      ready() {
+        super.ready();
+       // this.$.map.style.width = '700px !important';
+        
+      }
+      
+     
+
+    }
+
+    window.customElements.define(MyView2.is, MyView2);
+ 
+ 
+
+  </script>
+
+ 
+  <!-- <script async defer src="https://maps.googleapis.com/maps/api/js?&libraries=geometry&callback=initMap"></script> -->
+
+</dom-module>
